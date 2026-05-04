@@ -326,7 +326,7 @@ onboarding-gratitude-security-and-privacy-subtitle = Thank you for using { -bran
 
 # Sign up or Sign in screen
 onboarding-sign-up-title = Sync your data across devices
-onboarding-sign-up-description = Sign up for an account and all of your important info — passwords, bookmarks, and more — will be securely stored and available when you sign in to any device.
+onboarding-sign-up-description = You can sign in to your Mozilla account to sync your important information, but we recommend managing your passwords separately through a password manager with zero-knowledge architecture.
 onboarding-sign-up-button = Sign up or sign in
 onboarding-sign-up-secondary-button = Start browsing
 

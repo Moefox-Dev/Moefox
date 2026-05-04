@@ -3884,3 +3884,10 @@ html {
   padding: 24px 30px;
   margin-block: 0 24px;
 }
+
+/* MoeFox custom styles for onboarding images */
+.onboardingContainer .screen[pos=split] .section-secondary {
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+}

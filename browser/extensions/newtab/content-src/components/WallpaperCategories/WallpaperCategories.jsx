@@ -292,6 +292,10 @@ export class _WallpaperCategories extends React.PureComponent {
       case "firefox":
         fluent_id = "newtab-wallpaper-category-title-firefox";
         break;
+      // Moefox: Built-in wallpaper category
+      case "moefox":
+        fluent_id = "newtab-wallpaper-category-title-moefox";
+        break;
     }
 
     this.setState({ activeCategoryFluentID: fluent_id });
@@ -568,6 +572,10 @@ export class _WallpaperCategories extends React.PureComponent {
                   break;
                 case "firefox":
                   fluent_id = "newtab-wallpaper-category-title-firefox";
+                  break;
+                // Moefox: Built-in wallpaper category
+                case "moefox":
+                  fluent_id = "newtab-wallpaper-category-title-moefox";
                   break;
               }
               let style = {};

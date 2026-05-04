@@ -101,6 +101,11 @@
     }
   }
 
+  // Moefox: Built-in custom wallpaper (PNG format)
+  &.moefox-default {
+    background-image: url('chrome://newtab/content/data/content/assets/wallpapers/moefox-default.png');
+  }
+
   &:focus-visible {
     outline-offset: var(--focus-outline-offset);
   }

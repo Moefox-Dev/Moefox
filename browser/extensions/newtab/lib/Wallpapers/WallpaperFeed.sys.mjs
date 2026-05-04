@@ -34,6 +34,20 @@ const PREF_SELECTED_WALLPAPER =
 const RS_FALLBACK_BASE_URL =
   "https://firefox-settings-attachments.cdn.mozilla.net/";
 
+// Moefox: Built-in wallpapers that are bundled with the browser
+const BUILTIN_WALLPAPERS = [
+  {
+    id: "moefox-default",
+    title: "moefox-default",
+    theme: "dark",
+    category: "moefox",
+    wallpaperUrl:
+      "chrome://newtab/content/data/content/assets/wallpapers/moefox-default.png",
+    // Fluent ID for accessibility label (optional)
+    fluent_id: "newtab-wallpaper-moefox-default",
+  },
+];
+
 export class WallpaperFeed {
   constructor() {
     this.loaded = false;
@@ -132,9 +146,6 @@ export class WallpaperFeed {
 
     // retrieving all records in collection
     const records = await this.wallpaperClient.get();
-    if (!records?.length) {
-      return;
-    }
 
     const customWallpaperEnabled = Services.prefs.getBoolPref(
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED
@@ -150,8 +161,11 @@ export class WallpaperFeed {
       );
     }
 
+    // Moefox: Merge built-in wallpapers with remote settings wallpapers
+    // Built-in wallpapers are added first so they appear at the beginning of the list
     const wallpapers = [
-      ...records.map(record => {
+      ...BUILTIN_WALLPAPERS,
+      ...(records || []).map(record => {
         return {
           ...record,
           ...(record.attachment
@@ -167,10 +181,15 @@ export class WallpaperFeed {
       }),
     ];
 
+    // Moefox: Include built-in wallpaper categories
+    const builtinCategories = BUILTIN_WALLPAPERS.map(wp => wp.category).filter(
+      Boolean
+    );
     const categories = [
-      ...new Set(
-        wallpapers.map(wallpaper => wallpaper.category).filter(Boolean)
-      ),
+      ...new Set([
+        ...builtinCategories,
+        ...wallpapers.map(wallpaper => wallpaper.category).filter(Boolean),
+      ]),
       ...(customWallpaperEnabled ? ["custom-wallpaper"] : []), // Conditionally add custom wallpaper input
     ];
 

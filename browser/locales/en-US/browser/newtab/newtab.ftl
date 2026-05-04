@@ -354,6 +354,11 @@ newtab-wallpaper-celestial-river = Satellite image of river
 
 newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
+## Moefox (built-in wallpapers)
+
+newtab-wallpaper-category-title-moefox = Moefox
+newtab-wallpaper-moefox-default = Moefox default wallpaper
+
 
 # Variables
 #   $author_string (String) - The name of the creator of the photo.
