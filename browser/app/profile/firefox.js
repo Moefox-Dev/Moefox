@@ -3665,6 +3665,13 @@ pref("widget.support-xdg-config", true, locked);
 pref("dom.security.https_only_mode", true);
 pref("dom.security.https_only_mode_ever_enabled", true);
 
+// Password Manager - Default to not asking to save passwords
+pref("signon.rememberSignons", false);
+
+// Form Autofill - Default disabled for payments and addresses
+pref("extensions.formautofill.addresses.enabled", false);
+pref("extensions.formautofill.creditCards.enabled", false);
+
 // Telemetry - Disable all telemetry
 pref("toolkit.telemetry.enabled", false);
 pref("toolkit.telemetry.unified", false);
@@ -3674,13 +3681,19 @@ pref("toolkit.telemetry.newProfilePing.enabled", false);
 pref("toolkit.telemetry.shutdownPingSender.enabled", false);
 pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);
 
-// Health Report
-pref("datareporting.healthreport.uploadEnabled", false);
+// Health Report - Disable and lock
+pref("datareporting.healthreport.uploadEnabled", false, locked);
 pref("datareporting.policy.dataSubmissionEnabled", false);
+
+// Daily Usage Ping - Disable and lock
+pref("datareporting.usage.uploadEnabled", false, locked);
 
 // Crash Reporting
 pref("breakpad.reportURL", "");
 pref("browser.tabs.crashReporting.sendReport", false);
+
+// Crash auto-submit - Disable and lock
+pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false, locked);
 
 // Activity Stream
 pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
@@ -3693,6 +3706,9 @@ pref("extensions.pocket.enabled", false);
 // Studies (Shield)
 pref("app.shield.optoutstudies.enabled", false);
 pref("app.normandy.enabled", false);
+
+// Nimbus Rollouts - Disable and lock (Moefox uses custom update mechanism)
+pref("nimbus.rollouts.enabled", false, locked);
 
 // Crash reporting through telemetry
 pref("dom.ipc.reportCrashes", false);
