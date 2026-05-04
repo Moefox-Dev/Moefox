@@ -142,6 +142,8 @@ Preferences.addAll([
   { id: "privacy.userContext.ui.enabled", type: "bool" },
 
   { id: "sidebar.verticalTabs", type: "bool" },
+  { id: "sidebar.verticalTabs.detachFromSidebar", type: "bool" },
+  { id: "sidebar.verticalTabs.separateFromSidebar", type: "bool" },
   { id: "sidebar.revamp", type: "bool" },
 
   // CFR
@@ -2898,6 +2900,18 @@ SettingGroupManager.registerGroups({
       {
         id: "browserLayoutShowSidebar",
         l10nId: "browser-layout-show-sidebar2",
+        items: [
+          {
+            id: "browserLayoutDetachVerticalTabsFromSidebar",
+            l10nId: "browser-layout-vertical-tabs-detach-from-sidebar",
+            items: [
+              {
+                id: "browserLayoutSeparateVerticalTabsFromSidebar",
+                l10nId: "browser-layout-vertical-tabs-separate-from-sidebar",
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -5268,6 +5282,33 @@ var gMainPane = {
       gMainPane.showTranslationExceptions
     );
 
+    // Moefox: detach-from-sidebar and opposite-side checkbox settings
+    // with declarative deps instead of imperative DOM manipulation.
+    Preferences.addSetting({
+      id: "browserLayoutDetachVerticalTabsFromSidebar",
+      pref: "sidebar.verticalTabs.detachFromSidebar",
+      deps: ["browserLayoutRadioGroup", "browserLayoutShowSidebar"],
+      visible: deps =>
+        deps.browserLayoutRadioGroup.value &&
+        deps.browserLayoutShowSidebar.value,
+      disabled: deps =>
+        !deps.browserLayoutRadioGroup.value ||
+        !deps.browserLayoutShowSidebar.value,
+    });
+    Preferences.addSetting({
+      id: "browserLayoutSeparateVerticalTabsFromSidebar",
+      pref: "sidebar.verticalTabs.separateFromSidebar",
+      deps: ["browserLayoutRadioGroup", "browserLayoutShowSidebar", "browserLayoutDetachVerticalTabsFromSidebar"],
+      visible: deps =>
+        deps.browserLayoutRadioGroup.value &&
+        deps.browserLayoutShowSidebar.value &&
+        deps.browserLayoutDetachVerticalTabsFromSidebar.value,
+      disabled: deps =>
+        !deps.browserLayoutRadioGroup.value ||
+        !deps.browserLayoutShowSidebar.value ||
+        !deps.browserLayoutDetachVerticalTabsFromSidebar.value,
+    });
+
     document
       .getElementById("migrationWizardDialog")
       .addEventListener("MigrationWizard:Close", function (e) {
@@ -5352,6 +5393,42 @@ var gMainPane = {
       let updateDisabled =
         Services.policies && !Services.policies.isAllowed("appUpdate");
 
+      let moefoxUpdateDisabled = Services.prefs.getBoolPref(
+        "moefox.appUpdate.disabled",
+        false
+      );
+
+      if (moefoxUpdateDisabled) {
+        let desc = document.getElementById("moefoxUpdateTemporarilyDisabledDesc");
+        if (desc) {
+          desc.hidden = false;
+        }
+
+        let updateRadioGroup = document.getElementById("updateRadioGroup");
+        if (updateRadioGroup) {
+          updateRadioGroup.disabled = true;
+        }
+
+        let backgroundUpdate = document.getElementById("backgroundUpdate");
+        if (backgroundUpdate) {
+          backgroundUpdate.disabled = true;
+        }
+
+        let showUpdateHistory = document.getElementById("showUpdateHistory");
+        if (showUpdateHistory) {
+          showUpdateHistory.disabled = true;
+        }
+
+        let policyLabel = document.getElementById("updatePolicyDisabledLabel");
+        let moefoxLabel = document.getElementById(
+          "moefoxUpdateTemporarilyDisabledLabel"
+        );
+        if (policyLabel && moefoxLabel) {
+          policyLabel.hidden = true;
+          moefoxLabel.hidden = false;
+        }
+      }
+
       if (gIsPackagedApp) {
         // When we're running inside an app package, there's no point in
         // displaying any update content here, and it would get confusing if we
@@ -5365,12 +5442,19 @@ var gMainPane = {
           .getElementById("updateApp")
           .setAttribute("style", "display: none !important");
       } else if (
+        moefoxUpdateDisabled ||
         updateDisabled ||
         UpdateUtils.appUpdateAutoSettingIsLocked() ||
         gApplicationUpdateService.manualUpdateOnly
       ) {
-        document.getElementById("updateAllowDescription").hidden = true;
-        document.getElementById("updateSettingsContainer").hidden = true;
+        if (moefoxUpdateDisabled) {
+          // Keep the UI visible but disabled, so users understand it's
+          // intentionally turned off for now.
+          document.getElementById("updateSettingsContainer").hidden = false;
+        } else {
+          document.getElementById("updateAllowDescription").hidden = true;
+          document.getElementById("updateSettingsContainer").hidden = true;
+        }
       } else {
         // Start with no option selected since we are still reading the value
         document.getElementById("autoDesktop").removeAttribute("selected");

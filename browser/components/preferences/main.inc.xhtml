@@ -272,7 +272,10 @@
                 is="highlightable-button"/>
       </hbox>
       <hbox id="policyDisabled" align="start">
-        <label data-l10n-id="update-policy-disabled"/>
+        <label id="updatePolicyDisabledLabel" data-l10n-id="update-policy-disabled"/>
+        <label id="moefoxUpdateTemporarilyDisabledLabel"
+               data-l10n-id="moefox-update-temporarily-disabled"
+               hidden="true"/>
         <button data-l10n-id="update-checkForUpdatesButton"
                 is="highlightable-button"
                 disabled="true"/>
@@ -332,6 +335,10 @@
 
 #ifdef MOZ_UPDATER
   <label id="updateAllowDescription" data-l10n-id="update-application-allow-description"></label>
+  <description id="moefoxUpdateTemporarilyDisabledDesc"
+               class="text-blurb"
+               hidden="true"
+               data-l10n-id="moefox-update-temporarily-disabled"/>
   <vbox id="updateSettingsContainer" class="info-box-container">
     <radiogroup id="updateRadioGroup">
       <radio id="autoDesktop"

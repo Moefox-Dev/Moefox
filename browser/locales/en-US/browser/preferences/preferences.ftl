@@ -325,7 +325,15 @@ browser-layout-vertical-tabs2 =
 
 browser-layout-show-sidebar2 =
     .label = Show sidebar
-    .description = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
+
+# Moefox: Vertical tabs detach/opposite controls
+browser-layout-vertical-tabs-detach-from-sidebar =
+    .label = Detach from sidebar
+    .description = Host vertical tabs in a standalone pane, separate from the sidebar.
+
+browser-layout-vertical-tabs-separate-from-sidebar =
+    .label = Place on opposite side
+    .description = Dock vertical tabs on the opposite side of the screen from the sidebar.
 
 ## General Section - Language & Appearance
 
@@ -706,6 +714,8 @@ play-drm-content-learn-more = Learn more
 update-application-title = { -brand-short-name } Updates
 
 update-application-description = Keep { -brand-short-name } up to date for the best performance, stability, and security.
+
+moefox-update-temporarily-disabled = Updates are temporarily disabled in this build.
 
 # Variables:
 # $version (string) - Firefox version
