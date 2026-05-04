@@ -31,6 +31,69 @@ const lazy = XPCOMUtils.declareLazy({
     }),
 });
 
+const PREF_MOEFOX_DISABLED_ENGINE_IDS =
+  "moefox.search.disabledEngineIdentifiers";
+const PREF_MOEFOX_FORCED_DEFAULT_ENGINE_ID =
+  "moefox.search.forcedDefaultEngineIdentifier";
+const PREF_MOEFOX_FORCED_PRIVATE_DEFAULT_ENGINE_ID =
+  "moefox.search.forcedPrivateDefaultEngineIdentifier";
+
+const MOEFOX_DISABLED_ENGINE_IDS_PREF =
+  "moefox.search.disabledEngineIdentifiers";
+
+function getMoefoxDisabledEngineIdentifiers() {
+  try {
+    let value = Services.prefs.getStringPref(MOEFOX_DISABLED_ENGINE_IDS_PREF, "");
+    if (!value) {
+      return [];
+    }
+    return value
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function applyMoefoxSearchOverrides(refinedSearchConfig) {
+  let disabled = getMoefoxDisabledEngineIdentifiers();
+  if (disabled.length) {
+    refinedSearchConfig.engines = refinedSearchConfig.engines.filter(
+      e => !disabled.includes(e.identifier)
+    );
+
+    if (disabled.includes(refinedSearchConfig.appDefaultEngineId)) {
+      refinedSearchConfig.appDefaultEngineId = "";
+    }
+    if (disabled.includes(refinedSearchConfig.appPrivateDefaultEngineId)) {
+      refinedSearchConfig.appPrivateDefaultEngineId = "";
+    }
+  }
+
+  let forcedDefault = Services.prefs.getStringPref(
+    PREF_MOEFOX_FORCED_DEFAULT_ENGINE_ID,
+    ""
+  );
+  if (
+    forcedDefault &&
+    refinedSearchConfig.engines.find(e => e.identifier == forcedDefault)
+  ) {
+    refinedSearchConfig.appDefaultEngineId = forcedDefault;
+  }
+
+  let forcedPrivateDefault = Services.prefs.getStringPref(
+    PREF_MOEFOX_FORCED_PRIVATE_DEFAULT_ENGINE_ID,
+    ""
+  );
+  if (
+    forcedPrivateDefault &&
+    refinedSearchConfig.engines.find(e => e.identifier == forcedPrivateDefault)
+  ) {
+    refinedSearchConfig.appPrivateDefaultEngineId = forcedPrivateDefault;
+  }
+}
+
 /**
  * SearchEngineSelector parses the JSON configuration for
  * search engines and returns the applicable engines depending
@@ -138,8 +201,12 @@ export class SearchEngineSelector {
    *   The configuration data for an engine.
    */
   async findContextualSearchEngineByHost(host) {
+    let disabled = getMoefoxDisabledEngineIdentifiers();
     for (let config of this.#configuration) {
       if (config.recordType !== "engine") {
+        continue;
+      }
+      if (disabled.includes(config.identifier)) {
         continue;
       }
       let searchHost = new URL(config.base.urls.search.base).hostname;
@@ -165,6 +232,10 @@ export class SearchEngineSelector {
    *   The configuration data for an engine.
    */
   async findContextualSearchEngineById(id) {
+    let disabled = getMoefoxDisabledEngineIdentifiers();
+    if (disabled.includes(id)) {
+      return null;
+    }
     for (let config of this.#configuration) {
       if (config.recordType !== "engine") {
         continue;
@@ -216,22 +287,61 @@ export class SearchEngineSelector {
       `fetchEngineConfiguration ${locale}:${region}:${channel}:${distroID}:${experiment}:${appName}:${version}`
     );
 
-    let refinedSearchConfig = this.#selector.filterEngineConfiguration(
-      new lazy.SearchUserEnvironment({
-        locale,
-        region,
-        updateChannel: this.#convertUpdateChannel(channel),
-        distributionId: distroID ?? "",
-        experiment: experiment ?? "",
-        appName: this.#convertApplicationName(appName),
-        version,
-        deviceType: lazy.SearchDeviceType.NONE,
-      })
-    );
+    let userEnvironment = new lazy.SearchUserEnvironment({
+      locale,
+      region,
+      updateChannel: this.#convertUpdateChannel(channel),
+      distributionId: distroID ?? "",
+      experiment: experiment ?? "",
+      appName: this.#convertApplicationName(appName),
+      version,
+      deviceType: lazy.SearchDeviceType.NONE,
+    });
+
+    let refinedSearchConfig =
+      this.#selector.filterEngineConfiguration(userEnvironment);
 
     refinedSearchConfig.engines = refinedSearchConfig.engines.filter(
       e => !e.optional
     );
+
+    // Moefox: allow disabling specific engine identifiers (e.g. baidu), and
+    // force a default engine identifier (e.g. ddg) without enterprise policies.
+    try {
+      applyMoefoxSearchOverrides(refinedSearchConfig);
+    } catch (e) {
+      lazy.logConsole.debug("Moefox search overrides failed", e);
+    }
+
+    // Safety net: If we ended up with no engines, retry without a distribution
+    // id. A distro id can unintentionally exclude all engine orders for unknown
+    // distributions, which breaks the Preferences default-engine UI.
+    if (!refinedSearchConfig.engines.length) {
+      lazy.logConsole.error(
+        "No search engines matched configuration; retrying without distributionId"
+      );
+      let fallbackEnvironment = new lazy.SearchUserEnvironment({
+        locale,
+        region,
+        updateChannel: this.#convertUpdateChannel(channel),
+        distributionId: "",
+        experiment: experiment ?? "",
+        appName: this.#convertApplicationName(appName),
+        version,
+        deviceType: lazy.SearchDeviceType.NONE,
+      });
+
+      refinedSearchConfig =
+        this.#selector.filterEngineConfiguration(fallbackEnvironment);
+      refinedSearchConfig.engines = refinedSearchConfig.engines.filter(
+        e => !e.optional
+      );
+      try {
+        applyMoefoxSearchOverrides(refinedSearchConfig);
+      } catch (e) {
+        lazy.logConsole.debug("Moefox search overrides failed", e);
+      }
+    }
 
     if (
       !refinedSearchConfig.appDefaultEngineId ||

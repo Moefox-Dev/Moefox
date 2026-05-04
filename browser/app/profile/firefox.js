@@ -267,11 +267,11 @@ pref("browser.touchmode.auto", true);
 pref("browser.compactmode.show", false);
 
 // At startup, check if we're the default browser and prompt user if not.
-pref("browser.shell.checkDefaultBrowser", true);
+pref("browser.shell.checkDefaultBrowser", false);
 pref("browser.shell.shortcutFavicons",true);
 pref("browser.shell.mostRecentDateSetAsDefault", "");
 pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
-pref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", false);
+pref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", true);
 pref("browser.shell.defaultBrowserCheckCount", 0);
 #if defined(XP_WIN)
 // Attempt to set the default browser on Windows 10 using the UserChoice registry keys,
@@ -425,11 +425,11 @@ pref("browser.urlbar.suggest.clipboard",            true);
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.remotetab",            true);
-pref("browser.urlbar.suggest.searches",             true);
+pref("browser.urlbar.suggest.searches",             false);
 pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
 pref("browser.urlbar.suggest.calculator",           true);
-pref("browser.urlbar.suggest.recentsearches",       true);
+pref("browser.urlbar.suggest.recentsearches",       false);
 pref("browser.urlbar.suggest.quickactions",         true);
 
 pref("browser.urlbar.allowSearchSuggestionsForSimpleOrigins", true);
@@ -445,9 +445,9 @@ pref("browser.urlbar.trustPanel.featureGate", true);
 pref("browser.urlbar.unifiedSearchButton.always", false);
 
 // Enable trending suggestions and recent searches.
-pref("browser.urlbar.trending.featureGate", true);
+pref("browser.urlbar.trending.featureGate", false);
 pref("browser.urlbar.trending.requireSearchMode", false);
-pref("browser.urlbar.recentsearches.featureGate", true);
+pref("browser.urlbar.recentsearches.featureGate", false);
 
 // Enable Rich Entities.
 pref("browser.urlbar.richSuggestions.featureGate", true);
@@ -855,7 +855,8 @@ pref("browser.download.viewableInternally.enabledTypes", "xml,svg,webp,avif,jxl"
 
 // This controls whether the button is automatically shown/hidden depending
 // on whether there are downloads to show.
-pref("browser.download.autohideButton", true);
+// Moefox: Always show downloads button
+pref("browser.download.autohideButton", false);
 
 // Controls whether to open the downloads panel every time a download begins.
 // The first download ever run in a new profile will still open the panel.
@@ -882,6 +883,25 @@ pref("browser.helperApps.showOpenOptionForViewableInternally", true);
 
 // search engines URL
 pref("browser.search.searchEnginesURL",      "https://addons.mozilla.org/%LOCALE%/firefox/search-engines/");
+
+// Set default search engine to DuckDuckGo
+pref("browser.search.defaultenginename", "DuckDuckGo");
+
+// Moefox: Disable specific built-in search engine identifiers.
+// This is applied in SearchEngineSelector and is independent of enterprise policies.
+pref("moefox.search.disabledEngineIdentifiers", "baidu");
+
+// Moefox: Force the application default engines by identifier.
+// The modern search configuration uses identifiers like "ddg".
+pref("moefox.search.forcedDefaultEngineIdentifier", "ddg");
+pref("moefox.search.forcedPrivateDefaultEngineIdentifier", "ddg");
+
+// Moefox: Prefer OS UI locale on first startup for multi-locale packages.
+// An empty value enables the match-OS behavior in LocaleService.
+pref("intl.locale.requested", "");
+
+// Ensure distribution add-ons (distribution/extensions/*.xpi) are installed.
+pref("extensions.installDistroAddons", true);
 
 // search bar results always open in a new tab
 pref("browser.search.openintab", false);
@@ -1387,7 +1407,8 @@ pref("accessibility.typeaheadfind.flashBar", 1);
 // Whether we had to hide the "Firefox Labs" section because it would be empty.
 pref("browser.preferences.experimental.hidden", false);
 // Whether we show the "More from Mozilla" section.
-pref("browser.preferences.moreFromMozilla", true);
+// Whether we show the "More from Mozilla" section. Moefox: disabled by default.
+pref("browser.preferences.moreFromMozilla", false);
 // Whether we show the "AI Controls" pane.
 pref("browser.preferences.aiControls", true);
 // Whether to show unavailable AI controls regardless of region/locale
@@ -1401,7 +1422,8 @@ pref("browser.preferences.aiControls.showUnavailable", false);
 // we will revert those to the default settings.
 pref("browser.preferences.defaultPerformanceSettings.enabled", true);
 
-pref("browser.proton.toolbar.version", 0);
+// Moefox: Set to 3 to skip Proton toolbar migrations that remove buttons
+pref("browser.proton.toolbar.version", 3);
 
 // Backspace and Shift+Backspace behavior
 // 0 goes Back/Forward
@@ -1923,7 +1945,8 @@ pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSi
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.theme", "");
 
 // Current new tab page background images.
-pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "");
+// Moefox: Set built-in wallpaper as default
+pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "moefox-default");
 
 // Preference to show feature highlight about wallpaper on new tab page
 pref("browser.newtabpage.activity-stream.newtabWallpapers.highlightEnabled", false);
@@ -2194,11 +2217,13 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 pref("pdfjs.handleOctetStream", true);
 
 // Is the sidebar positioned ahead of the content browser
-pref("sidebar.position_start", true);
+// Is the sidebar positioned ahead of the content browser
+// Moefox: default to false (sidebar on right, Edge-style)
+pref("sidebar.position_start", false);
 #ifdef NIGHTLY_BUILD
 pref("sidebar.revamp", true);
 #else
-pref("sidebar.revamp", false);
+pref("sidebar.revamp", true);
 #endif
 pref("sidebar.revamp.round-content-area", true);
 pref("sidebar.animation.enabled", true);
@@ -2211,7 +2236,10 @@ pref("sidebar.animation.expand-on-hover.delay-duration-ms", 200);
 // you can introduce a new tool to the sidebar launcher.
 pref("sidebar.main.tools", "");
 pref("sidebar.installed.extensions", "");
-pref("sidebar.verticalTabs", false);
+pref("sidebar.verticalTabs", true);
+pref("sidebar.verticalTabs.detachFromSidebar", true);
+pref("sidebar.verticalTabs.separateFromSidebar", true);
+pref("sidebar.verticalTabs.edgeTopChrome", true);
 pref("sidebar.verticalTabs.dragToPinPromo.dismissed", false);
 pref("sidebar.visibility", "always-show");
 // Sidebar UI state is stored per-window via session restore. Use this pref
@@ -2914,8 +2942,13 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400); // 24 * 60 * 60
 pref("browser.engagement.downloads-button.has-used", false);
 pref("browser.engagement.fxa-toolbar-menu-button.has-used", false);
 pref("browser.engagement.home-button.has-used", false);
-pref("browser.engagement.sidebar-button.has-used", false);
-pref("browser.engagement.library-button.has-used", false);
+// Moefox: Mark sidebar-button and bookmarks-menu-button as used so they remain visible by default
+pref("browser.engagement.sidebar-button.has-used", true);
+pref("browser.engagement.bookmarks-menu-button.has-used", true);
+
+// Moefox: Mark preinstalled extension buttons as used so they remain visible by default
+pref("browser.engagement.ublock0_raymondhill_net-browser-action.has-used", true);
+pref("browser.engagement._testpilot-containers-browser-action.has-used", true);
 pref("browser.engagement.ctrlTab.has-used", false);
 
 pref("browser.aboutConfig.showWarning", true);
@@ -3614,9 +3647,52 @@ pref("toolkit.rust-components.logging.internal-level", "Warn");
 // Settings Redesign 2025 prefs
 pref("browser.settings-redesign.enabled", false);
 
+// Settings Redesign 2025 prefs
+pref("browser.settings-redesign.enabled", false);
+
 // A preference that will be locked to reflect whether this build has support
 // for XDG Config Home handling. Mostly used to be able to keep tests around
 // in case of a backout of the feature
 #if defined(MOZ_WIDGET_GTK)
 pref("widget.support-xdg-config", true, locked);
 #endif
+
+// ============================================================================
+// Privacy-Focused Customization for Firefox
+// ============================================================================
+
+// HTTPS-Only Mode
+pref("dom.security.https_only_mode", true);
+pref("dom.security.https_only_mode_ever_enabled", true);
+
+// Telemetry - Disable all telemetry
+pref("toolkit.telemetry.enabled", false);
+pref("toolkit.telemetry.unified", false);
+pref("toolkit.telemetry.archive.enabled", false);
+pref("toolkit.telemetry.reportingpolicy.firstRun", false);
+pref("toolkit.telemetry.newProfilePing.enabled", false);
+pref("toolkit.telemetry.shutdownPingSender.enabled", false);
+pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);
+
+// Health Report
+pref("datareporting.healthreport.uploadEnabled", false);
+pref("datareporting.policy.dataSubmissionEnabled", false);
+
+// Crash Reporting
+pref("breakpad.reportURL", "");
+pref("browser.tabs.crashReporting.sendReport", false);
+
+// Activity Stream
+pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
+pref("browser.newtabpage.activity-stream.telemetry", false);
+pref("browser.newtabpage.activity-stream.telemetry.ut.events", false);
+
+// Pocket
+pref("extensions.pocket.enabled", false);
+
+// Studies (Shield)
+pref("app.shield.optoutstudies.enabled", false);
+pref("app.normandy.enabled", false);
+
+// Crash reporting through telemetry
+pref("dom.ipc.reportCrashes", false);

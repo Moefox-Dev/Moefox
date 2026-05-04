@@ -15,7 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // that should be converted to search Topsites
 export const SEARCH_SHORTCUTS = [
   { keyword: "@amazon", shortURL: "amazon", url: "https://amazon.com" },
-  { keyword: "@\u767E\u5EA6", shortURL: "baidu", url: "https://baidu.com" },
   { keyword: "@google", shortURL: "google", url: "https://google.com" },
   {
     keyword: "@\u044F\u043D\u0434\u0435\u043A\u0441",

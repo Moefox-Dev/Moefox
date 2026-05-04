@@ -120,7 +120,7 @@
       "schema": 1702901837584,
       "specificDefaults": [
         {
-          "default": "baidu",
+          "default": "ddg",
           "environment": {
             "locales": [
               "zh-CN"
@@ -131,7 +131,7 @@
           }
         },
         {
-          "default": "baidu",
+          "default": "ddg",
           "environment": {
             "distributions": [
               "MozillaOnline"
@@ -361,7 +361,7 @@
         {
           "environment": {
             "locales": [
-              "zh-CN"
+              "x-moefx-disabled"
             ]
           },
           "subVariants": [
@@ -8363,7 +8363,7 @@
             ]
           },
           "order": [
-            "baidu",
+            "ddg",
             "bing",
             "google",
             "wikipedia*"
