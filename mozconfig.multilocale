@@ -1,0 +1,26 @@
+# Multi-locale packaging mozconfig for MoeFox.
+#
+# Full compilation build for complete branding customization (including EXE icons).
+# This allows custom icons to be embedded in the Firefox executable.
+
+# Compile from source to enable full branding customization
+# (Artifact builds cannot customize embedded EXE icons)
+# Uncomment below to switch back to artifact mode if needed:
+# ac_add_options --disable-compile-environment
+
+# Ensure RecursiveMake backend is available for multi-locale packaging.
+export BUILD_BACKENDS=FasterMake,RecursiveMake
+
+# Use a separate objdir to avoid clobbering the normal dev objdir.
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc-multilocale
+
+# MoeFox branding
+ac_add_options --with-branding=browser/branding/moefox
+
+# Release channel
+ac_add_options --enable-update-channel=release
+
+# Point to Mozilla's firefox-l10n repository checkout.
+# Clone with: git clone https://github.com/mozilla-l10n/firefox-l10n.git --depth 1
+# Uses USERPROFILE environment variable for portability
+ac_add_options --with-l10n-base=$USERPROFILE/.mozbuild/l10n-central

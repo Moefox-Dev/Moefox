@@ -11,6 +11,7 @@ import copy
 import difflib
 import functools
 import hashlib
+import io
 import itertools
 import logging
 import os
@@ -93,8 +94,8 @@ def is_running_under_coding_agent():
 
 def _open(path, mode):
     if "b" in mode:
-        return open(path, mode)
-    return open(path, mode, encoding="utf-8", newline="\n")
+        return io.open(path, mode)
+    return io.open(path, mode, encoding="utf-8", newline="\n")
 
 
 def hash_file(path, hasher=None):
@@ -104,7 +105,7 @@ def hash_file(path, hasher=None):
     # lots of cached data.  Don't change it lightly.
     h = hasher or hashlib.sha1()
 
-    with open(path, "rb") as fh:
+    with io.open(path, "rb") as fh:
         while True:
             data = fh.read(8192)
 

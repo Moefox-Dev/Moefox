@@ -61,6 +61,12 @@ else:
 # Helper function; ensures we always open files with the correct encoding when
 # opening them in text mode.
 def _open(path, mode="r"):
+
+    # Normalize paths on Windows to avoid issues with redundant separators
+    # (e.g. '..\\..\\dist\\...') when opening files.
+    if platform.system() == "Windows" and isinstance(path, str):
+        path = os.path.normpath(path)
+
     if "b" not in mode:
         return open(path, mode, encoding="utf-8")
     return open(path, mode)

@@ -48,8 +48,8 @@
 
 [@AB_CD@]
 @RESPATH@/dictionaries/*
-@RESPATH@/browser/localization/*
-@RESPATH@/localization/*
+@RESPATH@/browser/localization/**
+@RESPATH@/localization/**
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 @RESPATH@/fonts/*
 #endif
@@ -264,6 +264,9 @@
 @RESPATH@/browser/defaults/permissions
 ; Remote Settings JSON dumps
 @RESPATH@/browser/defaults/settings
+
+; Distribution directory for policies and customization
+@RESPATH@/distribution/*
 
 # channel-prefs.js has been removed on macOS.
 #ifndef XP_MACOSX

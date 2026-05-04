@@ -54,3 +54,12 @@ def requires_stub_installer(
 imply_option("MOZ_STUB_INSTALLER", True, when=requires_stub_installer)
 
 include("../toolkit/moz.configure")
+
+# Moefox: set a distinct profile directory when building with Moefox branding.
+# MOZ_APP_PROFILE is a project_flag (possible_origins=["implied"]) and cannot be
+# set from confvars.sh; it must be implied here based on the branding directory.
+@depends(moz_branding_directory)
+def _moefox_branding(branding_dir):
+    return branding_dir is not None and branding_dir.endswith("moefox")
+
+imply_option("MOZ_APP_PROFILE", "moefox", when=_moefox_branding)

@@ -1,0 +1,29 @@
+# Icon processing directory gitignore
+
+# Generated outputs
+output/
+*.png
+*.ico
+*.icns
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+~*

@@ -1,0 +1,11 @@
+# Automatically download and use compiled C++ components:
+ac_add_options --enable-artifact-builds
+
+# Keep an explicit objdir so build tooling can reliably locate it.
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
+
+# Use MoeFox branding on this branch.
+ac_add_options --with-branding=browser/branding/moefox
+
+# Set the update channel to release (not nightly)
+ac_add_options --enable-update-channel=release

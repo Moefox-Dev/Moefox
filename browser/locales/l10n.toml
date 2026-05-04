@@ -133,6 +133,14 @@ locales = [
     reference = "browser/branding/official/locales/en-US/**"
     l10n = "{l}browser/branding/official/**"
 
+# Moefox-only branding.
+# For multi-locale repacks, we want the en-US Moefox branding strings to be
+# available in the merge dir for all locales, even if l10n-central doesn't ship
+# a dedicated browser/branding/moefox subtree.
+[[paths]]
+    reference = "browser/branding/moefox/locales/en-US/**"
+    l10n = "{l}browser/branding/moefox/**"
+
 # This file was removed in bug 1948916. In order to keep this file in
 # repositories, we need to preserve this entry until esr115 and esr128 become
 # unsupported.
