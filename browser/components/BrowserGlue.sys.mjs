@@ -930,6 +930,9 @@ BrowserGlue.prototype = {
     lazy.PageDataService.init();
     lazy.ExtensionsUI.init();
 
+    // Moefox: Pin preinstalled extension buttons to toolbar
+    this._pinPreinstalledExtensions();
+
     let signingRequired;
     if (AppConstants.MOZ_REQUIRE_SIGNING) {
       signingRequired = true;
@@ -1621,6 +1624,62 @@ BrowserGlue.prototype = {
       Services.prefs.setIntPref(PREF, APP_DATA_VERSION);
     } else if (profileDataVersion < APP_DATA_VERSION) {
       lazy.ProfileDataUpgrader.upgrade(profileDataVersion, APP_DATA_VERSION);
+    }
+  },
+
+  // Moefox: Pin preinstalled extension buttons to toolbar
+  async _pinPreinstalledExtensions() {
+    // Only run on first startup (new profiles)
+    const PREF_PINNED = "moefox.extensions.preinstalled.pinned";
+    if (Services.prefs.getBoolPref(PREF_PINNED, false)) {
+      return;
+    }
+
+    try {
+      const { CustomizableUI } = ChromeUtils.importESModule(
+        "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
+      );
+
+      // Widget IDs for preinstalled extensions
+      // Format: {addon-id-without-@-and-dots-replaced-by-underscores}-browser-action
+      const extensionWidgets = [
+        "ublock0_raymondhill_net-browser-action",       // uBlock Origin
+        "_testpilot-containers-browser-action",          // Firefox Multi-Account Containers
+      ];
+
+      // Wait a bit for extensions to be loaded
+      await new Promise(resolve => lazy.setTimeout(resolve, 2000));
+
+      let pinnedCount = 0;
+      for (const widgetId of extensionWidgets) {
+        try {
+          const placement = CustomizableUI.getPlacementOfWidget(widgetId);
+          if (placement) {
+            // Widget exists, check if it's in the extensions menu
+            if (placement.area === CustomizableUI.AREA_ADDONS) {
+              // Move it to the navbar (main toolbar)
+              CustomizableUI.addWidgetToArea(
+                widgetId,
+                CustomizableUI.AREA_NAVBAR,
+                null // position - null means append to end
+              );
+              pinnedCount++;
+              console.info(`Moefox: Pinned ${widgetId} to toolbar`);
+            }
+          }
+        } catch (ex) {
+          console.warn(`Moefox: Could not pin ${widgetId}:`, ex);
+        }
+      }
+
+      // Mark as done so we don't run this again
+      Services.prefs.setBoolPref(PREF_PINNED, true);
+      
+      if (pinnedCount > 0) {
+        console.info(`Moefox: Successfully pinned ${pinnedCount} extension(s) to toolbar`);
+      }
+    } catch (ex) {
+      console.error("Moefox: Failed to pin preinstalled extensions:", ex);
     }
   },
 

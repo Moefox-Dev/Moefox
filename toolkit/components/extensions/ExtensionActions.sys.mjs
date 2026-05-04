@@ -549,6 +549,16 @@ export class BrowserActionBase extends PanelActionBase {
       options.default_area ||
       "menupanel";
 
+    // Moefox: Force distribution extensions to navbar
+    // Bitwarden's manifest has default_area: "navbar" but it's not being respected
+    // for distribution extensions, so we explicitly enforce it here.
+    const DISTRIBUTION_EXTENSIONS_NAVBAR = [
+      "{446900e4-71c2-419f-a6a7-df9c091e268b}", // Bitwarden
+    ];
+    if (DISTRIBUTION_EXTENSIONS_NAVBAR.includes(extension.id)) {
+      default_area = "navbar";
+    }
+
     // When the personal toolbar (bookmarks) is never visible OR vertical tabs
     // are enabled, we want to place the extension action (widget) in the panel
     // and not in one of these areas, otherwise it would be invisible to the

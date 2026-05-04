@@ -985,6 +985,9 @@ export let ProfileDataUpgrader = {
       } catch (e) {}
     }
 
+    // Moefox: Version 163 - Pin preinstalled extension buttons to toolbar
+    // This is handled in BrowserGlue._pinPreinstalledExtensions() for new profiles
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

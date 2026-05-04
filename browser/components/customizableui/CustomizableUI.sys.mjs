@@ -353,23 +353,20 @@ var CustomizableUIInternal = {
       false
     );
 
+    // Moefox: Define our desired navbar layout
     let navbarPlacements = [
-      lazy.sidebarRevampEnabled ? "sidebar-button" : null,
+      "sidebar-button",
       "back-button",
       "forward-button",
       "stop-reload-button",
-      Services.policies.isAllowed("removeHomeButtonByDefault")
-        ? null
-        : "home-button",
-      "spring",
-      "vertical-spacer",
       "urlbar-container",
-      "spring",
+      "unified-extensions-button",
       "downloads-button",
       AppConstants.MOZ_DEV_EDITION ? "developer-button" : null,
       lazy.ippEnabled ? "ipprotection-button" : null,
       "fxa-toolbar-menu-button",
       lazy.resetPBMToolbarButtonEnabled ? "reset-pbm-toolbar-button" : null,
+      "bookmarks-menu-button",
     ].filter(name => name);
 
     this.registerArea(
@@ -378,10 +375,8 @@ var CustomizableUIInternal = {
         type: CustomizableUI.TYPE_TOOLBAR,
         overflowable: true,
         defaultPlacements: navbarPlacements,
-        verticalTabsDefaultPlacements: [
-          "firefox-view-button",
-          "alltabs-button",
-        ],
+        // Moefox: Use the same layout for vertical tabs mode
+        verticalTabsDefaultPlacements: navbarPlacements,
         defaultCollapsed: false,
       },
       true

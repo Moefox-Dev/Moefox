@@ -209,6 +209,10 @@ export class UpdateServiceStub {
    * See nsIUpdateService.idl
    */
   get updateDisabled() {
+    // Moefox: Check for distribution-specific update disable pref.
+    if (Services.prefs.getBoolPref("moefox.appUpdate.disabled", false)) {
+      return true;
+    }
     return (
       (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
       this.updateDisabledForTesting ||

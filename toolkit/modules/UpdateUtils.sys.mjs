@@ -551,10 +551,17 @@ const PER_INSTALLATION_DEFAULTS_BRANCH = "__DEFAULTS__";
 UpdateUtils.PER_INSTALLATION_PREFS = {
   "app.update.auto": {
     type: UpdateUtils.PER_INSTALLATION_PREF_TYPE_BOOL,
-    defaultValue: true,
+    // Moefox: Default to manual update (check but don't auto-install).
+    defaultValue: Services.prefs.getBoolPref("moefox.appUpdate.disabled", false)
+      ? false
+      : true,
     migrate: true,
     observerTopic: "auto-update-config-change",
     policyFn: () => {
+      // Moefox: Force auto-update off when updates are disabled.
+      if (Services.prefs.getBoolPref("moefox.appUpdate.disabled", false)) {
+        return false;
+      }
       if (!Services.policies.isAllowed("app-auto-updates-off")) {
         // We aren't allowed to turn off auto-update - it is forced on.
         return true;
@@ -568,9 +575,16 @@ UpdateUtils.PER_INSTALLATION_PREFS = {
   },
   "app.update.background.enabled": {
     type: UpdateUtils.PER_INSTALLATION_PREF_TYPE_BOOL,
-    defaultValue: true,
+    // Moefox: Disable background update when updates are disabled.
+    defaultValue: Services.prefs.getBoolPref("moefox.appUpdate.disabled", false)
+      ? false
+      : true,
     observerTopic: "background-update-config-change",
     policyFn: () => {
+      // Moefox: Force background update off when updates are disabled.
+      if (Services.prefs.getBoolPref("moefox.appUpdate.disabled", false)) {
+        return false;
+      }
       if (!Services.policies.isAllowed("app-background-update-off")) {
         // We aren't allowed to turn off background update - it is forced on.
         return true;
