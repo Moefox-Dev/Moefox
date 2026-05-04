@@ -326,6 +326,53 @@ body {
   display: none;
 }
 
+/* Edge-like two-row top chrome for vertical tabs.
+ * Keep TabsToolbar visible as a dedicated titlebar row and move the browser UI
+ * (menu/extensions/urlbar) to the next row (#nav-bar).
+ */
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("sidebar.verticalTabs") {
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.verticalTabs.edgeTopChrome") {
+    #TabsToolbar {
+    #tabbrowser-tabs,
+    #new-tab-button,
+    #alltabs-button,
+    #firefox-view-button,
+    .content-analysis-indicator,
+    #private-browsing-indicator {
+      display: none;
+    }
+
+    /* Hide the regular toolbar-items container that holds the tab strip.
+     * Window controls remain outside of this container.
+     */
+    > .toolbar-items {
+      display: none;
+    }
+
+    #vertical-tabs-titlebar-title-container {
+      /* Keep the title centered relative to the window, not the remaining content.
+       * Reserve space for window controls on both sides.
+       */
+      padding-inline: var(--window-controls-size);
+    }
+
+    #vertical-tabs-titlebar-title {
+      max-width: 60vw;
+      margin: 0;
+    }
+    }
+
+    /* When we show a dedicated titlebar row, re-enable drag space in TabsToolbar.
+     * The vertical tabs pref normally hides these spacers because TabsToolbar is collapsed.
+     */
+    :root:not([taskbartab]) #TabsToolbar :is(.titlebar-spacer[type="pre-tabs"], .titlebar-spacer[type="post-tabs"]) {
+      display: revert;
+    }
+  }
+}
+
 :root:not([sizemode="maximized"], [sizemode="fullscreen"]) .titlebar-restore,
 :root:is([sizemode="maximized"], [sizemode="fullscreen"]) .titlebar-max {
   display: none;
@@ -425,6 +472,13 @@ body {
   }
 
   :root[taskbartab] & {
+    display: none;
+  }
+
+  /* Moefox: Hide vertical-spacer in Edge-style top chrome layout,
+     where navigation buttons already occupy the left side of urlbar */
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.verticalTabs.edgeTopChrome") {
     display: none;
   }
 }

@@ -66,6 +66,14 @@
       border-color: transparent;
     }
   }
+
+  /* When vertical tabs are detached from the sidebar (hosted in a standalone
+   * container), this splitter between pinned tabs and tools becomes unnecessary
+   * since vertical tabs are no longer part of the sidebar-main component. */
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.verticalTabs.detachFromSidebar") {
+    display: none !important;
+  }
 }
 
 .actions-list {

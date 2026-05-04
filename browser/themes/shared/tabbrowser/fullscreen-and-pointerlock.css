@@ -6,6 +6,7 @@
 :root[inDOMFullscreen] #fullscr-toggler,
 :root[inDOMFullscreen] #sidebar-box,
 :root[inDOMFullscreen] #sidebar-main,
+:root[inDOMFullscreen] #vertical-tabs-container,
 :root[inDOMFullscreen] #sidebar-splitter,
 :root[inDOMFullscreen] #sidebar-launcher-splitter,
 :root[inFullscreen]:not([macOSNativeFullscreen]) toolbar:not([fullscreentoolbar="true"]) {

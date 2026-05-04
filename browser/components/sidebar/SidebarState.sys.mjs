@@ -198,7 +198,7 @@ export class SidebarState {
       // Don't show launcher if we're in a popup window.
       this.launcherVisible = false;
     } else {
-      if (lazy.verticalTabsEnabled) {
+      if (lazy.verticalTabsEnabled && this.#verticalTabsInSidebar) {
         this.#props.launcherExpanded = true;
       }
       this.launcherVisible = showLauncher;
@@ -416,10 +416,16 @@ export class SidebarState {
     }
 
     // default/fallback value for vertical tabs is to always be visible initially
-    if (lazy.verticalTabsEnabled) {
+    if (lazy.verticalTabsEnabled && this.#verticalTabsInSidebar) {
       return true;
     }
     return DEFAULT_LAUNCHER_VISIBLE;
+  }
+
+  get #verticalTabsInSidebar() {
+    const { document } = this.#controllerGlobal;
+    const verticalTabsEl = document.getElementById("vertical-tabs");
+    return !!verticalTabsEl?.closest("#sidebar-main");
   }
 
   get launcherVisible() {
@@ -443,7 +449,7 @@ export class SidebarState {
   ) {
     switch (this.revampVisibility) {
       case "hide-sidebar":
-        if (lazy.verticalTabsEnabled) {
+        if (lazy.verticalTabsEnabled && this.#verticalTabsInSidebar) {
           forceExpandValue = visible;
         }
         this.launcherVisible = visible;
@@ -488,7 +494,15 @@ export class SidebarState {
     }
     const previousExpanded = this.#props.launcherExpanded;
     this.#props.launcherExpanded = expanded;
-    this.#launcherEl.expanded = expanded;
+
+    const isDetached = lazy.verticalTabsEnabled && this.#controller.verticalTabsDetachedFromSidebar;
+
+    // When vertical tabs are detached from the sidebar, the expand/collapse
+    // button should control only the vertical tabs container, not the sidebar
+    // launcher. The sidebar launcher remains in its collapsed state.
+    const shouldExpandLauncher = isDetached ? false : expanded;
+    this.#launcherEl.expanded = shouldExpandLauncher;
+
     if (expanded && !previousExpanded) {
       Glean.sidebar.expand.record();
     }
@@ -498,15 +512,27 @@ export class SidebarState {
     const mainEl = this.#controller.sidebarContainer;
     const splitterEl = this.#controller._launcherSplitter;
     const boxEl = this.#controller._box;
+    const verticalTabsContainerEl = this.#controllerGlobal.document.getElementById(
+      "vertical-tabs-container"
+    );
     const contentAreaEl =
       this.#controllerGlobal.document.getElementById("tabbrowser-tabbox");
-    tabContainer.toggleAttribute("expanded", expanded);
-    if (mainEl?.toggleAttribute) {
-      mainEl.toggleAttribute("sidebar-launcher-expanded", expanded);
+
+    // In detached mode, only the standalone vertical tabs container expands.
+    const shouldExpandTabContainer = expanded;
+    const shouldExpandVerticalTabsContainer = isDetached ? expanded : false;
+
+    tabContainer.toggleAttribute("expanded", shouldExpandTabContainer);
+    if (verticalTabsContainerEl) {
+      verticalTabsContainerEl.toggleAttribute("expanded", shouldExpandVerticalTabsContainer);
     }
-    splitterEl?.toggleAttribute("sidebar-launcher-expanded", expanded);
-    boxEl?.toggleAttribute("sidebar-launcher-expanded", expanded);
-    contentAreaEl.toggleAttribute("sidebar-launcher-expanded", expanded);
+
+    if (mainEl?.toggleAttribute) {
+      mainEl.toggleAttribute("sidebar-launcher-expanded", shouldExpandLauncher);
+    }
+    splitterEl?.toggleAttribute("sidebar-launcher-expanded", shouldExpandLauncher);
+    boxEl?.toggleAttribute("sidebar-launcher-expanded", shouldExpandLauncher);
+    contentAreaEl.toggleAttribute("sidebar-launcher-expanded", shouldExpandLauncher);
     this.#controller.updateToolbarButton();
     if (!this.launcherDragActive) {
       this.#updateLauncherWidth();

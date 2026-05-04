@@ -24,6 +24,93 @@ const EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS = 1000;
 const LAUNCHER_SPLITTER_WIDTH = 4;
 
 var SidebarController = {
+  /**
+   * Synchronize the visibility and functionality of the launcher splitter
+   * based on the current vertical tabs detachment mode.
+   *
+   * When vertical tabs are detached from the sidebar, the launcher splitter
+   * becomes unnecessary since the sidebar launcher width is fixed.
+   */
+  _syncLauncherSplitterVisibility() {
+    if (!this.sidebarRevampEnabled || BrowserHandler.kiosk) {
+      return;
+    }
+
+    const detached =
+      this.sidebarVerticalTabsEnabled && this.verticalTabsDetachedFromSidebar;
+
+    if (detached) {
+      this._disableLauncherDragging();
+    } else {
+      this._enableLauncherDragging();
+    }
+  },
+
+  /**
+   * Update the visibility of the pinned tabs splitter.
+   *
+   * The splitter is hidden when:
+   * - Vertical tabs are disabled (horizontal tabs mode), or
+   * - Vertical tabs are detached from the sidebar (standalone container mode)
+   */
+  _updatePinnedTabsSplitterVisibility() {
+    if (!this._pinnedTabsSplitter) {
+      return;
+    }
+
+    const detached =
+      CustomizableUI.verticalTabsEnabled && !!this.verticalTabsDetachedFromSidebar;
+    this._pinnedTabsSplitter.hidden = detached || !CustomizableUI.verticalTabsEnabled;
+  },
+
+  /**
+   * Synchronize the DOM host of the vertical tabs element based on the
+   * detachment mode preference.
+   *
+   * In detached mode (sidebar.verticalTabs.detachFromSidebar = true):
+   *   - Move #vertical-tabs into the standalone #vertical-tabs-container
+   *   - This allows independent positioning from the sidebar
+   *
+   * In attached mode (default, sidebar.verticalTabs.detachFromSidebar = false):
+   *   - Restore #vertical-tabs into sidebar-main's tabstrip slot
+   *   - This is the original Firefox behavior where vertical tabs are
+   *     part of the sidebar component
+   */
+  _syncVerticalTabsHost() {
+    const verticalTabsEl = document.getElementById(
+      CustomizableUI.AREA_VERTICAL_TABSTRIP
+    );
+    const verticalTabsContainer = document.getElementById(
+      "vertical-tabs-container"
+    );
+
+    if (!verticalTabsEl || !verticalTabsContainer || !this.sidebarMain) {
+      return;
+    }
+
+    const detached =
+      CustomizableUI.verticalTabsEnabled && !!this.verticalTabsDetachedFromSidebar;
+
+    if (detached) {
+      // Detached mode: host vertical tabs in standalone container.
+      if (verticalTabsEl.parentNode !== verticalTabsContainer) {
+        verticalTabsContainer.appendChild(verticalTabsEl);
+      }
+      verticalTabsContainer.toggleAttribute("vertical-tabs-host", true);
+      verticalTabsContainer.hidden = !CustomizableUI.verticalTabsEnabled;
+    } else {
+      // Attached mode: restore vertical tabs to sidebar-main slot.
+      if (verticalTabsEl.getAttribute("slot") !== "tabstrip") {
+        verticalTabsEl.setAttribute("slot", "tabstrip");
+      }
+      if (verticalTabsEl.parentNode !== this.sidebarMain) {
+        this.sidebarMain.appendChild(verticalTabsEl);
+      }
+      verticalTabsContainer.removeAttribute("vertical-tabs-host");
+      verticalTabsContainer.hidden = true;
+    }
+  },
+
   makeSidebar({ elementId, ...rest }, commandID) {
     const sidebar = {
       get sourceL10nEl() {
@@ -473,6 +560,9 @@ var SidebarController = {
       this._enableLauncherDragging();
       this._enablePinnedTabsSplitterDragging();
 
+      this._syncLauncherSplitterVisibility();
+      this._updatePinnedTabsSplitterVisibility();
+
       // Record Glean metrics.
       this.recordVisibilitySetting();
       this.recordPositionSetting();
@@ -801,37 +891,151 @@ var SidebarController = {
   },
 
   /**
-   * Read the positioning pref and position the sidebar and the splitter
-   * appropriately within the browser container.
+   * Position the sidebar components within the browser container based on
+   * the sidebar.position_start preference and vertical tabs settings.
+   *
+   * This method handles four main layout scenarios:
+   *
+   * 1. Default (attached mode, sidebar on start):
+   *    [sidebar-main | splitter | sidebar-box | splitter | content]
+   *
+   * 2. Attached mode, sidebar on end:
+   *    [content | splitter | sidebar-box | splitter | sidebar-main]
+   *
+   * 3. Detached mode, same side as sidebar:
+   *    [sidebar-main | splitter | sidebar-box | splitter | vertical-tabs | content]
+   *    (sidebar stays at screen edge, vertical tabs adjacent to content)
+   *
+   * 4. Detached mode, opposite side:
+   *    [vertical-tabs | content | ... | sidebar-main] or vice versa
+   *    (vertical tabs on opposite edge from sidebar)
+   *
+   * The method uses CSS flex order to achieve the desired layout without
+   * modifying the DOM structure.
    */
   setPosition() {
-    // First reset all ordinals to match DOM ordering.
-    let contentArea = document.getElementById("tabbrowser-tabbox");
-    let browser = document.getElementById("browser");
-    [...browser.children].forEach((node, i, children) => {
-      node.style.order = this._positionStart ? i + 1 : children.length - i;
-    });
-    let sidebarContainer = document.getElementById("sidebar-main");
-    let sidebarMain = document.querySelector("sidebar-main");
-
-    // Indicate we've switched ordering to the box
-    this._box.toggleAttribute("sidebar-positionend", !this._positionStart);
-    sidebarMain.toggleAttribute("sidebar-positionend", !this._positionStart);
-    contentArea.toggleAttribute("sidebar-positionend", !this._positionStart);
-    sidebarContainer.toggleAttribute(
-      "sidebar-positionend",
-      !this._positionStart
+    const browser = document.getElementById("browser");
+    const contentArea = document.getElementById("tabbrowser-tabbox");
+    const sidebarContainer = document.getElementById("sidebar-main");
+    const sidebarMain = document.querySelector("sidebar-main");
+    const verticalTabsContainer = document.getElementById(
+      "vertical-tabs-container"
     );
-    this.toolbarButton &&
-      this.toolbarButton.toggleAttribute(
-        "sidebar-positionend",
-        !this._positionStart
-      );
+    const verticalToolbar = document.getElementById(
+      CustomizableUI.AREA_VERTICAL_TABSTRIP
+    );
+
+    if (
+      !browser ||
+      !contentArea ||
+      !sidebarContainer ||
+      !this._launcherSplitter ||
+      !this._box ||
+      !this._splitter
+    ) {
+      return;
+    }
+
+    const sidebarOnStart = this._positionStart;
+    const sidebarOnEnd = !sidebarOnStart;
+    const verticalTabsEnabled = CustomizableUI.verticalTabsEnabled;
+    const detached =
+      verticalTabsEnabled && !!this.verticalTabsDetachedFromSidebar;
+    const oppositeSide = detached && !!this.verticalTabsSeparateFromSidebar;
+    const verticalTabsOnStart = oppositeSide ? !sidebarOnStart : sidebarOnStart;
+
+    // Build the base ordering array for sidebar components.
+    // This represents the default layout without the detached vertical tabs container.
+    let desired = sidebarOnStart
+      ? [
+          sidebarContainer,
+          this._launcherSplitter,
+          this._box,
+          this._splitter,
+          contentArea,
+        ]
+      : [
+          contentArea,
+          this._splitter,
+          this._box,
+          this._launcherSplitter,
+          sidebarContainer,
+        ];
+
+    // Handle vertical tabs container placement when in detached mode.
+    if (verticalTabsContainer) {
+      if (verticalTabsEnabled && detached) {
+        if (oppositeSide) {
+          // Opposite side mode: place vertical tabs at the outer edge
+          // opposite to the sidebar.
+          if (verticalTabsOnStart) {
+            desired.unshift(verticalTabsContainer);
+          } else {
+            desired.push(verticalTabsContainer);
+          }
+        } else {
+          // Same side mode: keep sidebar at screen edge, place vertical
+          // tabs between sidebar and content area.
+          const contentIndex = desired.indexOf(contentArea);
+          if (contentIndex >= 0) {
+            desired.splice(
+              sidebarOnStart ? contentIndex : contentIndex + 1,
+              0,
+              verticalTabsContainer
+            );
+          } else {
+            // Fallback if content area not found.
+            desired.push(verticalTabsContainer);
+          }
+        }
+
+        verticalTabsContainer.hidden = false;
+        verticalTabsContainer.toggleAttribute("vertical-tabs-host", true);
+        verticalTabsContainer.toggleAttribute(
+          "sidebar-positionend",
+          !verticalTabsOnStart
+        );
+        verticalToolbar?.toggleAttribute(
+          "sidebar-positionend",
+          !verticalTabsOnStart
+        );
+      } else {
+        verticalTabsContainer.hidden = true;
+        verticalTabsContainer.removeAttribute("vertical-tabs-host");
+        verticalTabsContainer.removeAttribute("sidebar-positionend");
+        verticalToolbar?.removeAttribute("sidebar-positionend");
+      }
+    }
+
+    // Apply CSS flex order values to achieve the desired layout.
+    // Each node gets a sequential order value based on its position in the array.
+    const desiredSet = new Set(desired.filter(Boolean));
+    let ordinal = 1;
+    for (const node of desired) {
+      if (!node) {
+        continue;
+      }
+      node.style.order = ordinal++;
+    }
+    // Assign order values to any remaining browser children not in our layout.
+    for (const node of browser.children) {
+      if (desiredSet.has(node)) {
+        continue;
+      }
+      node.style.order = ordinal++;
+    }
+
+    // Indicate we've switched ordering to the box.
+    this._box.toggleAttribute("sidebar-positionend", sidebarOnEnd);
+    sidebarMain?.toggleAttribute("sidebar-positionend", sidebarOnEnd);
+    contentArea.toggleAttribute("sidebar-positionend", sidebarOnEnd);
+    sidebarContainer.toggleAttribute("sidebar-positionend", sidebarOnEnd);
+    this.toolbarButton?.toggleAttribute("sidebar-positionend", sidebarOnEnd);
 
     this.hideSwitcherPanel();
 
-    let content = SidebarController.browser.contentWindow;
-    if (content && content.updatePosition) {
+    let content = SidebarController.browser?.contentWindow;
+    if (content?.updatePosition) {
       content.updatePosition();
     }
   },
@@ -1471,8 +1675,18 @@ var SidebarController = {
 
   /**
    * Enable the splitter which can be used to resize the launcher.
+   *
+   * In detached vertical tabs mode, the launcher splitter is hidden
+   * since the sidebar launcher maintains a fixed collapsed width.
    */
   _enableLauncherDragging() {
+    const detached =
+      this.sidebarVerticalTabsEnabled && this.verticalTabsDetachedFromSidebar;
+    if (detached) {
+      // Launcher splitter is unnecessary in detached mode.
+      this._launcherSplitter.hidden = true;
+      return;
+    }
     if (!this._launcherSplitter.hidden) {
       // Already showing the launcher splitter with observers connected.
       // Nothing to do.
@@ -2204,11 +2418,32 @@ var SidebarController = {
     let arrowScrollbox = tabStrip.arrowScrollbox;
     let currentScrollOrientation = arrowScrollbox.getAttribute("orient");
 
+    let verticalToolbar = document.getElementById(
+      CustomizableUI.AREA_VERTICAL_TABSTRIP
+    );
+    let verticalTabsContainer = document.getElementById(
+      "vertical-tabs-container"
+    );
+
+    this._syncVerticalTabsHost();
+
+    // Keep wrapper/container visibility in sync even if orientation attributes
+    // are already up-to-date (e.g. during startup).
+    verticalToolbar?.toggleAttribute("visible", toVerticalTabs);
+    if (verticalTabsContainer) {
+      const detached = toVerticalTabs && !!this.verticalTabsDetachedFromSidebar;
+      verticalTabsContainer.hidden = !detached;
+      verticalTabsContainer.toggleAttribute("vertical-tabs-host", detached);
+    }
+
+    this._updatePinnedTabsSplitterVisibility();
+
     if (
       (!toVerticalTabs && currentScrollOrientation !== "vertical") ||
       (toVerticalTabs && currentScrollOrientation === "vertical")
     ) {
-      // Nothing to update
+      // Orientation is already correct; still recompute ordering.
+      this.setPosition();
       return;
     }
 
@@ -2222,10 +2457,7 @@ var SidebarController = {
       tabStrip.setAttribute("orient", "horizontal");
     }
 
-    let verticalToolbar = document.getElementById(
-      CustomizableUI.AREA_VERTICAL_TABSTRIP
-    );
-    verticalToolbar.toggleAttribute("visible", toVerticalTabs);
+    // verticalToolbar / verticalTabsContainer already updated above.
     // Re-render sidebar-main so that templating is updated
     // for proper keyboard navigation for Tools
     this.sidebarMain.requestUpdate();
@@ -2237,6 +2469,9 @@ var SidebarController = {
       // been updated; we need to set it here to un-expand the launcher
       this._state.launcherExpanded = false;
     }
+
+    // Vertical tabs being enabled/disabled can change the intended ordering.
+    this.setPosition();
   },
 
   debouncedMouseEnter() {
@@ -2532,6 +2767,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
         const isVerticalTabs = Services.prefs.getBoolPref(
           "sidebar.verticalTabs"
         );
+        const verticalTabsEl = document.getElementById(
+          CustomizableUI.AREA_VERTICAL_TABSTRIP
+        );
+        const verticalTabsInSidebar = !!verticalTabsEl?.closest("#sidebar-main");
         SidebarController._state.revampVisibility = newValue;
         if (
           SidebarController._animationEnabled &&
@@ -2545,6 +2784,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
         let forceExpand = false;
         if (
           isVerticalTabs &&
+          verticalTabsInSidebar &&
           ["always-show", "hide-sidebar"].includes(newValue)
         ) {
           forceExpand = true;
@@ -2553,7 +2793,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
         // horizontal tabs and hide-sidebar = visible initially.
         // vertical tab and hide-sidebar = not visible initially
         let showLauncher = true;
-        if (newValue == "hide-sidebar" && isVerticalTabs) {
+        if (newValue == "hide-sidebar" && isVerticalTabs && verticalTabsInSidebar) {
           showLauncher = false;
         }
         SidebarController._state.updateVisibility(showLauncher, forceExpand);
@@ -2581,6 +2821,63 @@ XPCOMUtils.defineLazyPreferenceGetter(
       }
       SidebarController._state.updatePinnedTabsHeight();
       SidebarController._state.updateToolsHeight();
+    }
+  }
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "verticalTabsDetachedFromSidebar",
+  "sidebar.verticalTabs.detachFromSidebar",
+  false,
+  () => {
+    if (!SidebarController.uninitializing && !SidebarController.inSingleTabWindow) {
+      SidebarController._syncVerticalTabsHost();
+      SidebarController._syncLauncherSplitterVisibility();
+      SidebarController._updatePinnedTabsSplitterVisibility();
+
+      // Re-evaluate tabstrip expanded state based on current mode.
+      if (SidebarController._state) {
+        SidebarController._state.launcherExpanded = SidebarController._state.launcherExpanded;
+      }
+
+      SidebarController.setPosition();
+    }
+  }
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "verticalTabsSeparateFromSidebar",
+  "sidebar.verticalTabs.separateFromSidebar",
+  false,
+  () => {
+    if (!SidebarController.uninitializing && !SidebarController.inSingleTabWindow) {
+      if (SidebarController._state) {
+        const visibility = SidebarController.sidebarRevampVisibility;
+        const isVerticalTabs = Services.prefs.getBoolPref(
+          "sidebar.verticalTabs"
+        );
+        const verticalTabsEl = document.getElementById(
+          CustomizableUI.AREA_VERTICAL_TABSTRIP
+        );
+        const verticalTabsInSidebar = !!verticalTabsEl?.closest("#sidebar-main");
+        const forceExpand =
+          isVerticalTabs &&
+          verticalTabsInSidebar &&
+          ["always-show", "hide-sidebar"].includes(visibility);
+        const showLauncher = !(
+          visibility == "hide-sidebar" &&
+          isVerticalTabs &&
+          verticalTabsInSidebar
+        );
+        SidebarController._state.updateVisibility(showLauncher, forceExpand);
+        SidebarController.updateToolbarButton();
+      }
+      // Only affects layout when vertical tabs are detached from the sidebar.
+      if (SidebarController.verticalTabsDetachedFromSidebar) {
+        SidebarController.setPosition();
+      }
     }
   }
 );

@@ -2138,6 +2138,44 @@ tab-group {
   }
 }
 
+/*
+ * Styles for the standalone vertical tabs container used when vertical tabs
+ * are detached from the sidebar (sidebar.verticalTabs.detachFromSidebar = true).
+ *
+ * In detached mode, vertical tabs are moved from sidebar-main's slot to this
+ * independent container, allowing them to be positioned on either side of the
+ * screen independently from the sidebar.
+ */
+#vertical-tabs-container {
+  /* By default, this container is hidden and takes no layout space.
+   * It only becomes active when the vertical-tabs-host attribute is set,
+   * which happens when vertical tabs are detached from the sidebar. */
+  display: none;
+  width: 0;
+  min-width: 0;
+}
+
+/* Active state: container is hosting the vertical tabs element. */
+#vertical-tabs-container[vertical-tabs-host] {
+  display: flex;
+  flex-direction: column;
+  width: var(--tab-collapsed-width);
+  min-width: var(--tab-collapsed-width);
+  min-height: 0;
+}
+
+/* Expanded state: show tab titles alongside icons. */
+#vertical-tabs-container[vertical-tabs-host][expanded] {
+  width: clamp(var(--tab-collapsed-width), 18em, 340px);
+  min-width: clamp(var(--tab-collapsed-width), 18em, 340px);
+}
+
+/* Ensure vertical tabs element fills the container height. */
+#vertical-tabs-container[vertical-tabs-host] > #vertical-tabs {
+  flex: 1;
+  min-height: 0;
+}
+
 #vertical-tabs {
   overflow: hidden;
   display: none;

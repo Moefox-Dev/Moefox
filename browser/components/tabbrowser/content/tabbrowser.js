@@ -1530,7 +1530,40 @@
     }
 
     updateTitlebar() {
-      document.title = this.getWindowTitleForBrowser(this.selectedBrowser);
+      let title = this.getWindowTitleForBrowser(this.selectedBrowser);
+      document.title = title;
+
+      // In vertical tabs mode, Moefox can optionally show a dedicated titlebar row.
+      // Keep this lightweight and no-op if the UI element doesn't exist.
+      let titleLabel = document.getElementById("vertical-tabs-titlebar-title");
+      if (titleLabel) {
+        let isPopup = !window.toolbar.visible;
+        let isTaskbarTab = document.documentElement.hasAttribute("taskbartab");
+        let isSingleTabWindow = isPopup || isTaskbarTab;
+        let showTitle =
+          !isSingleTabWindow &&
+          Services.prefs.getBoolPref("sidebar.verticalTabs", false) &&
+          Services.prefs.getBoolPref("sidebar.verticalTabs.edgeTopChrome", false);
+
+        titleLabel.hidden = !showTitle;
+        if (showTitle) {
+          titleLabel.value = title;
+        }
+      } else {
+        // During early startup, `updateTitlebar()` can run before the toolbox
+        // subtree has been fully constructed. If Edge-like top chrome is enabled,
+        // schedule a single retry on the next frame.
+        let shouldRetry =
+          Services.prefs.getBoolPref("sidebar.verticalTabs", false) &&
+          Services.prefs.getBoolPref("sidebar.verticalTabs.edgeTopChrome", false);
+        if (shouldRetry && !this._verticalTabsTitlebarUpdateScheduled) {
+          this._verticalTabsTitlebarUpdateScheduled = true;
+          window.requestAnimationFrame(() => {
+            this._verticalTabsTitlebarUpdateScheduled = false;
+            this.updateTitlebar();
+          });
+        }
+      }
     }
 
     updateCurrentBrowser(aForceUpdate) {
@@ -10047,6 +10080,10 @@ var TabBarVisibility = {
       !isSingleTabWindow &&
       Services.prefs.getBoolPref("sidebar.verticalTabs", false);
 
+    let edgeTopChrome =
+      hasVerticalTabs &&
+      Services.prefs.getBoolPref("sidebar.verticalTabs.edgeTopChrome", false);
+
     // When `gBrowser` has not been initialized, we're opening a new window and
     // assume only a single tab is loading.
     let hasSingleTab = !gBrowser || gBrowser.visibleTabs.length == 1;
@@ -10054,7 +10091,7 @@ var TabBarVisibility = {
     // To prevent tabs being lost, hiding the tabs toolbar should only work
     // when only a single tab is visible or tabs are displayed elsewhere.
     let hideTabsToolbar =
-      (isSingleTabWindow && hasSingleTab) || hasVerticalTabs;
+      (isSingleTabWindow && hasSingleTab) || (hasVerticalTabs && !edgeTopChrome);
 
     // We only want a non-customized titlebar for popups. It should not be the
     // case, but if a popup window contains more than one tab we re-enable
@@ -10085,6 +10122,13 @@ var TabBarVisibility = {
     this._initialUpdateDone = true;
 
     tabsToolbar.collapsed = hideTabsToolbar;
+
+    // Ensure the window title is reflected in the Edge-like titlebar row.
+    // This helps on startup where `updateTitlebar()` may have run before the
+    // title label exists.
+    if (edgeTopChrome && gBrowser) {
+      gBrowser.updateTitlebar();
+    }
 
     // Stylize close menu items based on tab visibility. When a window will only
     // ever have a single tab, only show the option to close the tab, and

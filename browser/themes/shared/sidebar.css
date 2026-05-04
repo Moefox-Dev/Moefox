@@ -33,6 +33,7 @@
 }
 
 #sidebar-main,
+#vertical-tabs-container,
 #sidebar-box {
   text-shadow: none;
   max-width: 75vw;
@@ -235,6 +236,7 @@ menuseparator + #sidebar-extensions-separator {
 
 #sidebar-main,
 sidebar-main,
+#vertical-tabs-container,
 #sidebar-box,
 #sidebar-splitter,
 #tabbrowser-tabbox {
