@@ -311,6 +311,12 @@ body {
   }
 }
 
+/* Hide the page title container by default. It is only shown in the Edge Top
+ * Chrome layout (vertical tabs with a dedicated titlebar row). */
+#vertical-tabs-titlebar-title-container {
+  display: none;
+}
+
 /* Hide the TabsToolbar/nav-bar titlebar controls if the menubar is permanently shown.
  * (That is, if the menu bar doesn't autohide, and we're not in a fullscreen or
  * popup window.) */
@@ -352,6 +358,7 @@ body {
     }
 
     #vertical-tabs-titlebar-title-container {
+      display: revert;
       /* Keep the title centered relative to the window, not the remaining content.
        * Reserve space for window controls on both sides.
        */

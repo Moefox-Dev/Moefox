@@ -5284,15 +5284,17 @@ var gMainPane = {
 
     // Moefox: detach-from-sidebar and opposite-side checkbox settings
     // with declarative deps instead of imperative DOM manipulation.
+    // The radio group returns "true" or "false" as strings, so we must
+    // compare explicitly to hide these options when horizontal tabs are active.
     Preferences.addSetting({
       id: "browserLayoutDetachVerticalTabsFromSidebar",
       pref: "sidebar.verticalTabs.detachFromSidebar",
       deps: ["browserLayoutRadioGroup", "browserLayoutShowSidebar"],
       visible: deps =>
-        deps.browserLayoutRadioGroup.value &&
+        deps.browserLayoutRadioGroup.value === "true" &&
         deps.browserLayoutShowSidebar.value,
       disabled: deps =>
-        !deps.browserLayoutRadioGroup.value ||
+        deps.browserLayoutRadioGroup.value !== "true" ||
         !deps.browserLayoutShowSidebar.value,
     });
     Preferences.addSetting({
@@ -5300,11 +5302,11 @@ var gMainPane = {
       pref: "sidebar.verticalTabs.separateFromSidebar",
       deps: ["browserLayoutRadioGroup", "browserLayoutShowSidebar", "browserLayoutDetachVerticalTabsFromSidebar"],
       visible: deps =>
-        deps.browserLayoutRadioGroup.value &&
+        deps.browserLayoutRadioGroup.value === "true" &&
         deps.browserLayoutShowSidebar.value &&
         deps.browserLayoutDetachVerticalTabsFromSidebar.value,
       disabled: deps =>
-        !deps.browserLayoutRadioGroup.value ||
+        deps.browserLayoutRadioGroup.value !== "true" ||
         !deps.browserLayoutShowSidebar.value ||
         !deps.browserLayoutDetachVerticalTabsFromSidebar.value,
     });
